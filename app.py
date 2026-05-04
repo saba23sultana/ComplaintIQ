@@ -149,31 +149,32 @@ def analyse_text(text: str,
 # ============================================================
 # UI COMPONENTS
 # ============================================================
-def render_risk_card(result: dict):
-    """Render the main risk assessment card."""
-    risk     = result["risk_level"]
-    color    = RISK_COLORS[risk]
-    bg_color = RISK_BG[risk]
-
-    st.markdown(f"""
-    <div style="
-        background-color: {bg_color};
-        border-left: 6px solid {color};
-        border-radius: 8px;
-        padding: 20px 24px;
-        margin-bottom: 16px;
-    ">
-        <h2 style="color: {color}; margin: 0 0 4px 0;">
-            {result['risk_icon']} Risk Level: {risk}
-        </h2>
-        <p style="color: #555; margin: 0; font-size: 15px;">
-            Risk Score: <strong>{result['risk_score']}</strong> / 1.0
-            &nbsp;|&nbsp;
-            Escalation Required:
-            <strong>{'Yes' if result['escalation_flag'] else 'No'}</strong>
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+def render_recommendations(result: dict):
+    """Render actionable recommendations."""
+    st.markdown("#### 📋 Recommended Actions")
+    risk  = result["risk_level"]
+    color = RISK_COLORS[risk]
+    for rec in result["recommendations"]:
+        st.markdown(f"""
+        <div style="
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            border-left: 3px solid {color};
+            font-size: 14px;
+            color: #1a1a1a;
+            line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        ">
+            <span style="color: #1a1a1a;">{rec}</span>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def render_prediction_metrics(result: dict):
@@ -192,11 +193,12 @@ def render_prediction_metrics(result: dict):
             border-radius: 8px;
             padding: 16px;
             border: 1px solid #e0e0e0;
+            color: #1a1a1a;
         ">
             <h3 style="color: {color}; margin: 0 0 8px 0;">
                 {tone}
             </h3>
-            <p style="margin: 0; color: #666; font-size: 14px;">
+            <p style="margin: 0; color: #444444; font-size: 14px;">
                 Confidence: <strong>{sent_conf:.1%}</strong>
                 ({sent_lvl})
             </p>
@@ -215,11 +217,12 @@ def render_prediction_metrics(result: dict):
             border-radius: 8px;
             padding: 16px;
             border: 1px solid #e0e0e0;
+            color: #1a1a1a;
         ">
             <h3 style="color: {color}; margin: 0 0 8px 0;">
                 {urgency}
             </h3>
-            <p style="margin: 0; color: #666; font-size: 14px;">
+            <p style="margin: 0; color: #444444; font-size: 14px;">
                 Confidence: <strong>{pri_conf:.1%}</strong>
                 ({pri_lvl})
             </p>
