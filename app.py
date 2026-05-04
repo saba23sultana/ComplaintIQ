@@ -75,9 +75,13 @@ def get_models(model_choice: str):
     use_f32 = model_choice == "DeBERTa-v3-small"
     with st.spinner(f"Loading {model_choice} models..."):
         tok_sent, mdl_sent = load_model(
-            HF_MODELS[model_choice]["sentiment"], use_float32=use_f32)
-        tok_pri,  mdl_pri  = load_model(
-            HF_MODELS[model_choice]["priority"],  use_float32=use_f32)
+            HF_MODELS[model_choice]["sentiment"],
+            use_float32=use_f32
+        )
+        tok_pri, mdl_pri = load_model(
+            HF_MODELS[model_choice]["priority"],
+            use_float32=use_f32
+        )
     return tok_sent, mdl_sent, tok_pri, mdl_pri
 
 
@@ -149,32 +153,30 @@ def analyse_text(text: str,
 # ============================================================
 # UI COMPONENTS
 # ============================================================
-def render_recommendations(result: dict):
-    """Render actionable recommendations."""
-    st.markdown("#### 📋 Recommended Actions")
-    risk  = result["risk_level"]
-    color = RISK_COLORS[risk]
-    for rec in result["recommendations"]:
-        st.markdown(f"""
-        <div style="
-            background: #f8f9fa;
-            border-radius: 6px;
-            padding: 10px 14px;
-            margin-bottom: 8px;
-            border-left: 3px solid {color};
-            font-size: 14px;
-            color: #1a1a1a;
-            line-height: 1.5;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            white-space: normal;
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
-        ">
-            <span style="color: #1a1a1a;">{rec}</span>
-        </div>
-        """, unsafe_allow_html=True)
+def render_risk_card(result: dict):
+    """Render the main risk assessment card."""
+    risk     = result["risk_level"]
+    color    = RISK_COLORS[risk]
+    bg_color = RISK_BG[risk]
+    st.markdown(f"""
+    <div style="
+        background-color: {bg_color};
+        border-left: 6px solid {color};
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+    ">
+        <h2 style="color: {color}; margin: 0 0 4px 0;">
+            {result['risk_icon']} Risk Level: {risk}
+        </h2>
+        <p style="color: #1a1a1a; margin: 0; font-size: 15px;">
+            Risk Score: <strong>{result['risk_score']}</strong> / 1.0
+            &nbsp;|&nbsp;
+            Escalation Required:
+            <strong>{'Yes' if result['escalation_flag'] else 'No'}</strong>
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def render_prediction_metrics(result: dict):
@@ -183,8 +185,8 @@ def render_prediction_metrics(result: dict):
 
     with col1:
         st.markdown("#### 🎭 Emotional Tone")
-        tone  = result["emotional_tone"]
-        color = "#FF4B4B" if tone == "Negative" else "#21C354"
+        tone      = result["emotional_tone"]
+        color     = "#FF4B4B" if tone == "Negative" else "#21C354"
         sent_conf = result["confidence_summary"]["sentiment_confidence"]
         sent_lvl  = result["confidence_summary"]["sentiment_confidence_level"]
         st.markdown(f"""
@@ -193,11 +195,8 @@ def render_prediction_metrics(result: dict):
             border-radius: 8px;
             padding: 16px;
             border: 1px solid #e0e0e0;
-            color: #1a1a1a;
         ">
-            <h3 style="color: {color}; margin: 0 0 8px 0;">
-                {tone}
-            </h3>
+            <h3 style="color: {color}; margin: 0 0 8px 0;">{tone}</h3>
             <p style="margin: 0; color: #444444; font-size: 14px;">
                 Confidence: <strong>{sent_conf:.1%}</strong>
                 ({sent_lvl})
@@ -207,8 +206,8 @@ def render_prediction_metrics(result: dict):
 
     with col2:
         st.markdown("#### ⏰ Urgency Level")
-        urgency = result["urgency_label"]
-        color   = "#FF4B4B" if urgency == "Urgent" else "#21C354"
+        urgency  = result["urgency_label"]
+        color    = "#FF4B4B" if urgency == "Urgent" else "#21C354"
         pri_conf = result["confidence_summary"]["priority_confidence"]
         pri_lvl  = result["confidence_summary"]["priority_confidence_level"]
         st.markdown(f"""
@@ -217,11 +216,8 @@ def render_prediction_metrics(result: dict):
             border-radius: 8px;
             padding: 16px;
             border: 1px solid #e0e0e0;
-            color: #1a1a1a;
         ">
-            <h3 style="color: {color}; margin: 0 0 8px 0;">
-                {urgency}
-            </h3>
+            <h3 style="color: {color}; margin: 0 0 8px 0;">{urgency}</h3>
             <p style="margin: 0; color: #444444; font-size: 14px;">
                 Confidence: <strong>{pri_conf:.1%}</strong>
                 ({pri_lvl})
@@ -266,8 +262,16 @@ def render_recommendations(result: dict):
             margin-bottom: 8px;
             border-left: 3px solid {color};
             font-size: 14px;
+            color: #1a1a1a;
+            line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
         ">
-            {rec}
+            <span style="color: #1a1a1a;">{rec}</span>
         </div>
         """, unsafe_allow_html=True)
 
@@ -276,9 +280,9 @@ def render_complaint_stats(result: dict, text: str):
     """Render complaint text statistics."""
     st.markdown("#### 📝 Complaint Statistics")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Word Count",      result["word_count"])
-    col2.metric("Char Count",      len(text))
-    col3.metric("Risk Score",      f"{result['risk_score']:.3f}")
+    col1.metric("Word Count",  result["word_count"])
+    col2.metric("Char Count",  len(text))
+    col3.metric("Risk Score",  f"{result['risk_score']:.3f}")
 
 
 # ============================================================
@@ -287,11 +291,7 @@ def render_complaint_stats(result: dict, text: str):
 def render_sidebar():
     """Render sidebar with model selection and project info."""
     with st.sidebar:
-        st.image(
-            "https://img.icons8.com/fluency/96/complaint.png",
-            width=60
-        )
-        st.title("ComplaintIQ")
+        st.title("🔍 ComplaintIQ")
         st.markdown(
             "AI-powered complaint analysis and "
             "escalation decision support."
@@ -301,9 +301,9 @@ def render_sidebar():
         st.markdown("### ⚙️ Model Settings")
         model_choice = st.selectbox(
             "Select Model",
-            options    = ["DeBERTa-v3-small", "DistilBERT"],
-            index      = 0,
-            help       = (
+            options = ["DeBERTa-v3-small", "DistilBERT"],
+            index   = 0,
+            help    = (
                 "DeBERTa-v3-small: Best performance\n"
                 "DistilBERT: Faster inference"
             )
@@ -312,11 +312,15 @@ def render_sidebar():
         st.divider()
         st.markdown("### 📊 Model Performance")
         perf_df = pd.DataFrame({
-            "Model":       ["TF-IDF+LR", "DistilBERT", "DeBERTa"],
-            "Sent. F1":    [0.6424, 0.6626, 0.6897],
-            "Pri. F1":     [0.8229, 0.7941, 0.8330],
+            "Model":    ["TF-IDF+LR", "DistilBERT", "DeBERTa"],
+            "Sent. F1": [0.6424, 0.6626, 0.6897],
+            "Pri. F1":  [0.8229, 0.7941, 0.8330],
         })
-        st.dataframe(perf_df, hide_index=True, use_container_width=True)
+        st.dataframe(
+            perf_df,
+            hide_index          = True,
+            use_container_width = True
+        )
 
         st.divider()
         st.markdown("### ℹ️ About")
@@ -328,14 +332,14 @@ def render_sidebar():
         - 🔴 Risk level
         - 📋 Recommended actions
 
-        Built with DistilBERT & DeBERTa-v3-small
+        Built with DistilBERT and DeBERTa-v3-small
         fine-tuned on financial complaint data.
         """)
 
         st.divider()
         st.markdown(
             "<p style='font-size:12px; color:#888;'>"
-            "AT2 NLP Project | 2024</p>",
+            "AT2 NLP Project | 2025</p>",
             unsafe_allow_html=True
         )
 
@@ -355,7 +359,7 @@ def main():
     <h1 style='margin-bottom: 4px;'>
         🔍 ComplaintIQ
     </h1>
-    <p style='color: #666; font-size: 16px; margin-top: 0;'>
+    <p style='color: #888; font-size: 16px; margin-top: 0;'>
         AI-powered complaint analysis and escalation
         decision support system
     </p>
@@ -378,28 +382,35 @@ def main():
         )
 
         complaint_text = st.text_area(
-            label       = "Complaint Text",
-            placeholder = (
+            label            = "Complaint Text",
+            placeholder      = (
                 "e.g. I have been trying to resolve an "
                 "unauthorised charge on my account for "
                 "three weeks with no response..."
             ),
-            height = 180,
+            height           = 180,
             label_visibility = "collapsed"
         )
 
         col1, col2, col3 = st.columns([1, 1, 4])
-        analyse_btn  = col1.button(
-            "🔍 Analyse", type="primary", use_container_width=True)
-        clear_btn    = col2.button(
-            "🗑️ Clear",   type="secondary", use_container_width=True)
+        analyse_btn = col1.button(
+            "🔍 Analyse",
+            type             = "primary",
+            use_container_width = True
+        )
+        clear_btn = col2.button(
+            "🗑️ Clear",
+            type             = "secondary",
+            use_container_width = True
+        )
 
         if clear_btn:
             st.rerun()
 
         if analyse_btn:
             if not complaint_text.strip():
-                st.warning("Please enter a complaint text to analyse.")
+                st.warning(
+                    "Please enter a complaint text to analyse.")
             elif len(complaint_text.split()) < 3:
                 st.warning(
                     "Complaint text is too short. "
@@ -407,7 +418,8 @@ def main():
                 )
             else:
                 with st.spinner(
-                    f"Analysing with {model_choice}..."):
+                    f"Analysing with {model_choice}..."
+                ):
                     tok_sent, mdl_sent, tok_pri, mdl_pri = \
                         get_models(model_choice)
                     start  = time.perf_counter()
@@ -415,7 +427,7 @@ def main():
                         complaint_text,
                         tok_sent, mdl_sent,
                         tok_pri,  mdl_pri,
-                        use_float32 = use_float32
+                        use_float32=use_float32
                     )
                     elapsed = time.perf_counter() - start
 
@@ -425,7 +437,6 @@ def main():
                 )
                 st.divider()
 
-                # Results
                 render_risk_card(result)
                 st.markdown("")
                 render_prediction_metrics(result)
@@ -436,8 +447,9 @@ def main():
                 st.markdown("")
                 render_complaint_stats(result, complaint_text)
 
-                # Raw output expander
-                with st.expander("🔧 Raw Analysis Output (JSON)"):
+                with st.expander(
+                    "🔧 Raw Analysis Output (JSON)"
+                ):
                     display_result = {
                         k: v for k, v in result.items()
                         if k not in [
@@ -458,7 +470,7 @@ def main():
 
         uploaded_file = st.file_uploader(
             "Upload CSV",
-            type            = ["csv"],
+            type             = ["csv"],
             label_visibility = "collapsed"
         )
 
@@ -497,18 +509,17 @@ def main():
                         batch_subset = batch_df.head(
                             max_rows).reset_index(drop=True)
                         results_list = []
-
                         progress_bar = st.progress(
                             0, text="Analysing complaints...")
 
                         for i, row in batch_subset.iterrows():
-                            text = str(
+                            text   = str(
                                 row["Consumer_complaint"])[:1000]
                             result = analyse_text(
                                 text,
                                 tok_sent, mdl_sent,
                                 tok_pri,  mdl_pri,
-                                use_float32 = use_float32
+                                use_float32=use_float32
                             )
                             results_list.append({
                                 "Complaint (preview)":
@@ -532,7 +543,10 @@ def main():
                             })
                             progress_bar.progress(
                                 (i + 1) / max_rows,
-                                text=f"Analysing {i+1}/{max_rows}..."
+                                text=(
+                                    f"Analysing "
+                                    f"{i+1}/{max_rows}..."
+                                )
                             )
 
                         progress_bar.empty()
@@ -544,7 +558,6 @@ def main():
                             use_container_width=True
                         )
 
-                        # Summary stats
                         st.markdown("### Summary")
                         c1, c2, c3, c4 = st.columns(4)
                         c1.metric(
@@ -567,7 +580,6 @@ def main():
                             int(results_df["Escalation"].sum())
                         )
 
-                        # Download button
                         csv_buffer = io.StringIO()
                         results_df.to_csv(
                             csv_buffer, index=False)
@@ -589,7 +601,6 @@ def main():
             "the held-out test set (263 samples)."
         )
 
-        # Performance table
         st.markdown("#### Test Set Results")
         comparison_df = pd.DataFrame({
             "Model": [
@@ -613,9 +624,7 @@ def main():
 
         st.divider()
 
-        # Per-class F1
         col1, col2 = st.columns(2)
-
         with col1:
             st.markdown("#### Sentiment — Per-Class F1")
             sent_df = pd.DataFrame({
@@ -658,7 +667,7 @@ def main():
             "🏆 **DeBERTa-v3-small** achieves the best "
             "performance on both tasks and is used as the "
             "default model in ComplaintIQ.\n\n"
-            "⚡ **TF-IDF + LR** is 4,124× faster than "
+            "⚡ **TF-IDF + LR** is 4,124x faster than "
             "DeBERTa and only 0.84 MB — best choice for "
             "high-volume real-time environments.\n\n"
             "📉 **DistilBERT** underperforms TF-IDF on the "
