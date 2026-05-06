@@ -249,5 +249,5 @@ accelerate>=0.27.0
 
 ## License
 
-This project is developed for academic purposes as part of AT2 NLP Assignment 2025.
+This project is developed for academic purposes as part of AT2 NLP Assignment 2026.
 Dataset is licensed under CC BY 4.0.
