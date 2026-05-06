@@ -597,11 +597,12 @@ def main():
     with tab3:
         st.markdown("### Model Performance Comparison")
         st.markdown(
-            "Comparison of all three models evaluated on "
-            "the held-out test set (263 samples)."
+            "Comprehensive comparison of all three models "
+            "evaluated on the held-out test set (263 samples)."
         )
 
-        st.markdown("#### Test Set Results")
+        # ── Full comparison table ─────────────────────────
+        st.markdown("#### 📋 Test Set Results")
         comparison_df = pd.DataFrame({
             "Model": [
                 "TF-IDF + LR",
@@ -613,8 +614,7 @@ def main():
             "Avg Inference (ms)": [0.007,  16.48,  27.22],
             "Disk Size (MB)":     [0.84,   512.49, 1098.80],
             "Interpretable":      ["✅ Yes", "❌ No", "❌ No"],
-            "Deployment Cost":    [
-                "Very Low", "Moderate", "High"]
+            "Deployment Cost":    ["Very Low", "Moderate", "High"]
         })
         st.dataframe(
             comparison_df,
@@ -624,15 +624,74 @@ def main():
 
         st.divider()
 
+        # ── Macro F1 bar charts ───────────────────────────
+        st.markdown("#### 📊 Macro F1 Comparison")
+        models  = ["TF-IDF + LR", "DistilBERT", "DeBERTa-v3-small"]
+        colors  = ["#4575b4", "#74add1", "#d73027"]
+
         col1, col2 = st.columns(2)
+
         with col1:
-            st.markdown("#### Sentiment — Per-Class F1")
+            st.markdown("**Sentiment Task**")
+            sent_f1s = [0.6424, 0.6626, 0.6897]
+            sent_chart_df = pd.DataFrame({
+                "Model":     models,
+                "Macro F1":  sent_f1s
+            }).set_index("Model")
+            st.bar_chart(
+                sent_chart_df,
+                use_container_width = True,
+                color               = "#d73027"
+            )
+            for model, f1 in zip(models, sent_f1s):
+                delta = f1 - sent_f1s[0]
+                delta_str = (
+                    f"+{delta:.4f}" if delta > 0
+                    else f"{delta:.4f}"
+                )
+                color = "normal" if delta >= 0 else "inverse"
+                st.metric(
+                    label = model,
+                    value = f"{f1:.4f}",
+                    delta = delta_str if model != "TF-IDF + LR"
+                            else "baseline"
+                )
+
+        with col2:
+            st.markdown("**Priority Task**")
+            pri_f1s = [0.8229, 0.7941, 0.8330]
+            pri_chart_df = pd.DataFrame({
+                "Model":    models,
+                "Macro F1": pri_f1s
+            }).set_index("Model")
+            st.bar_chart(
+                pri_chart_df,
+                use_container_width = True,
+                color               = "#4575b4"
+            )
+            for model, f1 in zip(models, pri_f1s):
+                delta = f1 - pri_f1s[0]
+                delta_str = (
+                    f"+{delta:.4f}" if delta > 0
+                    else f"{delta:.4f}"
+                )
+                st.metric(
+                    label = model,
+                    value = f"{f1:.4f}",
+                    delta = delta_str if model != "TF-IDF + LR"
+                            else "baseline"
+                )
+
+        st.divider()
+
+        # ── Per-class F1 tables ───────────────────────────
+        st.markdown("#### 🔍 Per-Class F1 Breakdown")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("**Sentiment Classification**")
             sent_df = pd.DataFrame({
-                "Model": [
-                    "TF-IDF + LR",
-                    "DistilBERT",
-                    "DeBERTa-v3-small"
-                ],
+                "Model": models,
                 "Neutral F1":      [0.79, 0.84, 0.83],
                 "Negative F1":     [0.49, 0.49, 0.55],
                 "Negative Recall": [0.54, 0.46, 0.60],
@@ -642,15 +701,16 @@ def main():
                 hide_index          = True,
                 use_container_width = True
             )
+            st.caption(
+                "Negative Recall is the most critical metric — "
+                "it measures how many negative complaints "
+                "are correctly identified."
+            )
 
         with col2:
-            st.markdown("#### Priority — Per-Class F1")
+            st.markdown("**Priority Classification**")
             pri_df = pd.DataFrame({
-                "Model": [
-                    "TF-IDF + LR",
-                    "DistilBERT",
-                    "DeBERTa-v3-small"
-                ],
+                "Model": models,
                 "Not Urgent F1":     [0.73, 0.68, 0.75],
                 "Urgent F1":         [0.92, 0.91, 0.92],
                 "Not Urgent Recall": [0.79, 0.70, 0.84],
@@ -660,20 +720,242 @@ def main():
                 hide_index          = True,
                 use_container_width = True
             )
+            st.caption(
+                "Not Urgent Recall measures how well the model "
+                "avoids unnecessary escalations of "
+                "non-urgent complaints."
+            )
 
         st.divider()
-        st.markdown("#### Key Findings")
-        st.info(
+
+        # ── Speed and efficiency ──────────────────────────
+        st.markdown("#### ⚡ Speed & Efficiency Comparison")
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric(
+            "TF-IDF + LR",
+            "0.007 ms/sample",
+            "4,124× faster than DeBERTa",
+            delta_color = "normal"
+        )
+        col2.metric(
+            "DistilBERT",
+            "16.48 ms/sample",
+            "1.65× faster than DeBERTa",
+            delta_color = "normal"
+        )
+        col3.metric(
+            "DeBERTa-v3-small",
+            "27.22 ms/sample",
+            "Best performance",
+            delta_color = "off"
+        )
+
+        st.markdown("")
+        speed_df = pd.DataFrame({
+            "Model":          models,
+            "Inference (ms)": [0.007, 16.48, 27.22],
+            "Disk Size (MB)": [0.84, 512.49, 1098.80],
+            "Parameters (M)": [0.05, 66.96, 141.90]
+        }).set_index("Model")
+
+        st.markdown("**Inference Time (ms per sample)**")
+        st.bar_chart(
+            speed_df[["Inference (ms)"]],
+            use_container_width = True,
+            color               = "#ff7f0e"
+        )
+
+        st.divider()
+
+        # ── Trade-off summary ─────────────────────────────
+        st.markdown("#### 🎯 Model Selection Guide")
+        st.markdown(
+            "Choose the right model based on your deployment needs:"
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.markdown(f"""
+            <div style="
+                background: #e8f4f8;
+                border-radius: 10px;
+                padding: 20px;
+                border-top: 4px solid #4575b4;
+                color: #1a1a1a;
+                min-height: 220px;
+            ">
+                <h4 style="color: #4575b4; margin-top: 0;">
+                    TF-IDF + LR
+                </h4>
+                <p style="color: #1a1a1a; font-size: 13px;">
+                    ✅ Best for high-volume real-time systems<br>
+                    ✅ Fully interpretable decisions<br>
+                    ✅ Minimal infrastructure needed<br>
+                    ✅ 0.84 MB deployment size<br>
+                    ⚠️ Lower sentiment detection<br>
+                    ⚠️ Cannot capture context
+                </p>
+                <p style="
+                    color: #4575b4;
+                    font-weight: bold;
+                    font-size: 13px;
+                ">
+                    Use when: speed and interpretability
+                    are priorities
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div style="
+                background: #e8f0f8;
+                border-radius: 10px;
+                padding: 20px;
+                border-top: 4px solid #74add1;
+                color: #1a1a1a;
+                min-height: 220px;
+            ">
+                <h4 style="color: #74add1; margin-top: 0;">
+                    DistilBERT
+                </h4>
+                <p style="color: #1a1a1a; font-size: 13px;">
+                    ✅ Good sentiment detection<br>
+                    ✅ Faster than DeBERTa<br>
+                    ✅ Smaller than DeBERTa<br>
+                    ⚠️ Underperforms TF-IDF on priority<br>
+                    ⚠️ Not interpretable<br>
+                    ⚠️ 512 MB deployment size
+                </p>
+                <p style="
+                    color: #74add1;
+                    font-weight: bold;
+                    font-size: 13px;
+                ">
+                    Use when: moderate performance
+                    with lower cost than DeBERTa
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col3:
+            st.markdown(f"""
+            <div style="
+                background: #fdf0f0;
+                border-radius: 10px;
+                padding: 20px;
+                border-top: 4px solid #d73027;
+                color: #1a1a1a;
+                min-height: 220px;
+            ">
+                <h4 style="color: #d73027; margin-top: 0;">
+                    DeBERTa-v3-small ⭐
+                </h4>
+                <p style="color: #1a1a1a; font-size: 13px;">
+                    ✅ Best overall performance<br>
+                    ✅ Best minority class recall<br>
+                    ✅ Best sentiment detection<br>
+                    ✅ Used in ComplaintIQ<br>
+                    ⚠️ Highest inference time<br>
+                    ⚠️ 1.1 GB deployment size
+                </p>
+                <p style="
+                    color: #d73027;
+                    font-weight: bold;
+                    font-size: 13px;
+                ">
+                    Use when: maximum accuracy
+                    is the priority
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.divider()
+
+        # ── Error analysis summary ────────────────────────
+        st.markdown("#### 🔎 Error Analysis Summary")
+        st.markdown(
+            "Key findings from error analysis on "
+            "DeBERTa-v3-small (263 test samples):"
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("**Sentiment Task Errors**")
+            err_sent_df = pd.DataFrame({
+                "Error Type":        ["False Positive", "False Negative"],
+                "Count":             [39, 27],
+                "Mean Confidence":   ["71.7%", "75.2%"],
+                "Primary Cause":     [
+                    "Label ambiguity",
+                    "Implicit emotion"
+                ]
+            })
+            st.dataframe(
+                err_sent_df,
+                hide_index          = True,
+                use_container_width = True
+            )
+            st.caption(
+                "Highest error rate in Loans (34.8%) "
+                "and short complaints (Q1: 37.9%)"
+            )
+
+        with col2:
+            st.markdown("**Priority Task Errors**")
+            err_pri_df = pd.DataFrame({
+                "Error Type":        ["False Positive", "False Negative"],
+                "Count":             [9, 23],
+                "Mean Confidence":   ["88.6%", "87.5%"],
+                "Primary Cause":     [
+                    "Legal language",
+                    "Long complaint truncation"
+                ]
+            })
+            st.dataframe(
+                err_pri_df,
+                hide_index          = True,
+                use_container_width = True
+            )
+            st.caption(
+                "Highest error rate in Money Transfer (23.7%) "
+                "and long complaints (Q4: 30.3%)"
+            )
+
+        st.divider()
+
+        # ── Key findings ──────────────────────────────────
+        st.markdown("#### 💡 Key Findings")
+        st.success(
             "🏆 **DeBERTa-v3-small** achieves the best "
-            "performance on both tasks and is used as the "
-            "default model in ComplaintIQ.\n\n"
-            "⚡ **TF-IDF + LR** is 4,124x faster than "
-            "DeBERTa and only 0.84 MB — best choice for "
-            "high-volume real-time environments.\n\n"
+            "performance on both tasks (Sentiment F1: 0.6897, "
+            "Priority F1: 0.8330) and is used as the default "
+            "model in ComplaintIQ."
+        )
+        st.warning(
+            "⚡ **TF-IDF + LR** is 4,124× faster than DeBERTa "
+            "at only 0.84 MB — the best choice for high-volume "
+            "real-time environments where speed and "
+            "interpretability are prioritised over marginal "
+            "performance gains."
+        )
+        st.error(
             "📉 **DistilBERT** underperforms TF-IDF on the "
-            "priority task (-0.029 Macro F1), confirming "
-            "that urgency signals in this dataset are "
-            "partially keyword-driven."
+            "priority task (0.7941 vs 0.8229 Macro F1), "
+            "confirming that urgency signals in this dataset "
+            "are partially keyword-driven, favouring sparse "
+            "TF-IDF representations on small training sets."
+        )
+        st.info(
+            "🔀 **Hybrid system:** ComplaintIQ combines neural "
+            "predictions with a keyword safety override layer, "
+            "addressing high-confidence false negatives "
+            "identified in error analysis. This reflects "
+            "production best practice for critical "
+            "classification systems."
         )
 
 
