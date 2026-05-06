@@ -215,11 +215,11 @@ project submission. It includes:
 | 1.7–1.8 | Data splits, augmentation |
 | 2.1–2.2 | Task definition, TF-IDF + LR baseline |
 | 2.3 | DistilBERT and DeBERTa-v3-small fine-tuning |
-| 2.4 | Risk engine and recommendation system |
-| 2.5 | Speed and efficiency comparison |
-| 2.6 | Hyperparameter tuning |
-| 2.7 | Error analysis |
-| 2.8 | Model interpretability (coefficients + LIME) |
+| 2.4 | Speed and efficiency comparison |
+| 2.5 | Hyperparameter tuning |
+| 2.6 | Error analysis |
+| 2.7 | Model interpretability (coefficients + LIME) |
+| 2.8 | Risk engine and recommendation system |
 | 2.9 | Streamlit application development and deployment |
 
 ---
